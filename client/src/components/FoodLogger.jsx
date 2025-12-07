@@ -52,8 +52,8 @@ const FoodLogger = () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`AI Error (${response.status}): ${errorText || response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server Error: ${response.status}`);
             }
 
             const data = await response.json();
