@@ -1,0 +1,182 @@
+import React, { useState, useEffect } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const Dashboard = () => {
+    const [stats, setStats] = useState({
+        caloriesConsumed: 0,
+        logsCount: 0
+    });
+    const [chartData, setChartData] = useState([]);
+    const [macroData, setMacroData] = useState([]);
+
+    const COLORS = ['#d4c5a5', '#8c8c8c', '#4a4a4a']; // Beige, Grey, Dark Grey
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('/api/logs');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const logs = await response.json();
+
+            // Calculate today's stats
+            const today = new Date().toLocaleDateString();
+            const todaysLogs = logs.filter(log => log.date === today);
+            const calories = todaysLogs.reduce((acc, log) => acc + (log.calories || 0), 0);
+
+            // Prepare Chart Data (Last 7 entries/days)
+            // Group by date for a real chart
+            const grouped = logs.reduce((acc, log) => {
+                acc[log.date] = (acc[log.date] || 0) + log.calories;
+                return acc;
+            }, {});
+
+            const data = Object.keys(grouped).map(date => ({
+                name: date.split('/')[0] + '/' + date.split('/')[1], // Simple date format
+                calories: grouped[date]
+            })).slice(-7); // Last 7 days
+
+            // Prepare Macro Data
+            const macros = todaysLogs.reduce((acc, log) => {
+                acc.protein += log.protein || 0;
+                acc.carbs += log.carbs || 0;
+                acc.fats += log.fats || 0;
+                return acc;
+            }, { protein: 0, carbs: 0, fats: 0 });
+
+            const pieData = [
+                { name: 'Protein', value: macros.protein },
+                { name: 'Carbs', value: macros.carbs },
+                { name: 'Fats', value: macros.fats },
+            ];
+
+            setStats({
+                caloriesConsumed: calories,
+                logsCount: logs.length
+            });
+            setChartData(data);
+            setMacroData(pieData);
+            setError(null);
+
+        } catch (error) {
+            console.error("Failed to fetch data", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            {error && (
+                <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg">
+                    Error loading data: {error}
+                </div>
+            )}
+            {loading && <div className="text-center text-primary animate-pulse">Loading dashboard...</div>}
+            {/* Top Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="card border-l-4 border-l-primary bg-gradient-to-br from-card to-darker">
+                    <h3 className="text-secondary text-xs font-bold uppercase tracking-widest">Calories Today</h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-primary">{stats.caloriesConsumed}</span>
+                        <span className="text-sm text-gray-500">kcal</span>
+                    </div>
+                    <div className="mt-4 w-full bg-gray-800 rounded-full h-1">
+                        <div
+                            className="bg-primary h-1 rounded-full transition-all duration-1000"
+                            style={{ width: `${Math.min((stats.caloriesConsumed / 2500) * 100, 100)}%` }}
+                        ></div>
+                    </div>
+                </div>
+
+                <div className="card border-l-4 border-l-secondary bg-gradient-to-br from-card to-darker">
+                    <h3 className="text-secondary text-xs font-bold uppercase tracking-widest">Total Logs</h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-white">{stats.logsCount}</span>
+                        <span className="text-sm text-gray-500">entries</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Consistent tracking is key.</p>
+                </div>
+
+                <div className="card border-l-4 border-l-gray-700 bg-gradient-to-br from-card to-darker flex flex-col justify-center items-center text-center">
+                    <h3 className="text-secondary text-xs font-bold uppercase tracking-widest mb-1">Status</h3>
+                    <span className="text-green-500 font-bold tracking-wider text-sm">● ACTIVE</span>
+                </div>
+            </div>
+
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Area Chart */}
+                <div className="card h-[350px]">
+                    <h3 className="text-lg font-bold mb-6 text-white">Calorie Trend</h3>
+                    <ResponsiveContainer width="100%" height="85%">
+                        <AreaChart data={chartData}>
+                            <defs>
+                                <linearGradient id="colorCal" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#d4c5a5" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#d4c5a5" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                            <XAxis dataKey="name" stroke="#666" tick={{ fill: '#666', fontSize: 12 }} axisLine={false} tickLine={false} />
+                            <YAxis stroke="#666" tick={{ fill: '#666', fontSize: 12 }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #333', borderRadius: '8px' }}
+                                itemStyle={{ color: '#d4c5a5' }}
+                            />
+                            <Area type="monotone" dataKey="calories" stroke="#d4c5a5" strokeWidth={2} fillOpacity={1} fill="url(#colorCal)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Pie Chart */}
+                <div className="card h-[350px]">
+                    <h3 className="text-lg font-bold mb-6 text-white">Today's Macros</h3>
+                    <div className="flex items-center justify-center h-[85%]">
+                        {stats.caloriesConsumed > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={macroData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {macroData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1c1c1c', border: '1px solid #333', borderRadius: '8px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="text-gray-600 text-sm">Log food to see breakdown</div>
+                        )}
+                    </div>
+                    {stats.caloriesConsumed > 0 && (
+                        <div className="flex justify-center gap-4 text-xs text-gray-400 mt-[-20px]">
+                            <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#d4c5a5]"></span> Protein</div>
+                            <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#8c8c8c]"></span> Carbs</div>
+                            <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#4a4a4a]"></span> Fats</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;

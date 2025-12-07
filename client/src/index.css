@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dark Luxury Theme */
+  --color-primary: #d4c5a5;
+  /* Beige */
+  --color-secondary: #8c8c8c;
+  /* Warm Grey */
+  --color-dark: #121212;
+  /* Deep Black/Grey */
+  --color-darker: #0a0a0a;
+  /* Pure Black */
+  --color-card: #1c1c1c;
+  /* Card Background */
+  --font-sans: Inter, system-ui, sans-serif;
+
+  --shadow-luxury: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px rgba(212, 197, 165, 0.15);
+}
+
+@layer base {
+  body {
+    @apply bg-darker text-gray-200 font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight text-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-darker font-bold py-2 px-6 rounded-lg hover:bg-primary/90 transition-all duration-300 shadow-glow uppercase tracking-wide text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white font-bold py-2 px-6 rounded-lg hover:bg-secondary/90 transition-all duration-300 shadow-luxury uppercase tracking-wide text-sm;
+  }
+
+  .input-field {
+    @apply bg-card border border-gray-800 text-white rounded-lg p-3 w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-colors placeholder-gray-600;
+  }
+
+  .card {
+    @apply bg-card rounded-xl p-6 shadow-luxury border border-gray-800/50 hover:border-primary/20 transition-colors duration-300;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d4c5a5;
+}
