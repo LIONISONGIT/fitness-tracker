@@ -54,3 +54,4 @@ To run locally, you need to run both client and server.
     npm run dev
     ```
     *Client runs on localhost:5173 (proxies /api to 3000)*
+# Fitness-Tracker
