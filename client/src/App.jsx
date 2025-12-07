@@ -12,9 +12,7 @@ function App() {
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  if (!token) {
-    return <Login onLogin={setToken} />;
-  }
+
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -36,6 +34,10 @@ function App() {
       {label}
     </button>
   );
+
+  if (!token) {
+    return <Login onLogin={setToken} />;
+  }
 
   return (
     <div className="min-h-screen bg-darker text-white p-4 md:p-8 pb-24">
