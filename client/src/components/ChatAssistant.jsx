@@ -107,7 +107,7 @@ const ChatAssistant = () => {
 
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Bhai, connection error aa raha hai. Server check kar lo!" }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message || "Connection failed"}` }]);
         } finally {
             setLoading(false);
         }

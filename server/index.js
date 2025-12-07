@@ -11,6 +11,12 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Debug Middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+});
+
 // Database Connection
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -45,7 +51,8 @@ initDb();
 // Routes
 
 // 1. GET /api/logs
-app.get('/api/logs', async (req, res) => {
+// 1. GET /api/logs
+const getLogs = async (req, res) => {
     try {
         const client = await pool.connect();
         const result = await client.query('SELECT * FROM logs ORDER BY created_at DESC');
@@ -56,10 +63,13 @@ app.get('/api/logs', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
+app.get('/api/logs', getLogs);
+app.get('/logs', getLogs);
 
 // 2. POST /api/logs
-app.post('/api/logs', async (req, res) => {
+// 2. POST /api/logs
+const createLog = async (req, res) => {
     const { id, date, food, calories, protein, carbs, fats } = req.body;
 
     // Basic validation
@@ -69,8 +79,6 @@ app.post('/api/logs', async (req, res) => {
 
     try {
         const client = await pool.connect();
-        // Use the provided ID or generate one? The frontend provides ID mostly.
-        // Ensure we handle defaults if 0s are passed
         const query = `
       INSERT INTO logs (id, date, food, calories, protein, carbs, fats)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -93,10 +101,13 @@ app.post('/api/logs', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
+app.post('/api/logs', createLog);
+app.post('/logs', createLog);
 
 // 3. DELETE /api/logs/:id
-app.delete('/api/logs/:id', async (req, res) => {
+// 3. DELETE /api/logs/:id
+const deleteLog = async (req, res) => {
     const { id } = req.params;
     try {
         const client = await pool.connect();
@@ -107,18 +118,17 @@ app.delete('/api/logs/:id', async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
+app.delete('/api/logs/:id', deleteLog);
+app.delete('/logs/:id', deleteLog);
 
 // 4. POST /api/analyze-food (Replaces Ollama)
-app.post('/api/analyze-food', async (req, res) => {
-    const { prompt } = req.body; // Expecting the raw text or the prompt from frontend
-
-    // If the frontend sends the full prompt structure, we parse it. 
-    // Or we just take the food text.
-    // The frontend currently sends: { model: 'mistral', prompt: "...", stream: false, format: 'json' }
-    // We can just grab 'prompt'.
+// 4. POST /api/analyze-food
+const analyzeFood = async (req, res) => {
+    const { prompt } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
+        console.error("Missing GEMINI_API_KEY");
         return res.status(500).json({ error: "Server API Key not configured" });
     }
 
@@ -126,31 +136,22 @@ app.post('/api/analyze-food', async (req, res) => {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // We can just forward the prompt, but Gemini behaves better if we handle structure here.
-        // However, to minimize frontend changes, let's just use the prompt string from the body.
-
-        // Safety: The frontend prompt is "You are a nutritionist... Input: 'food'".
-        // Gemini handles this well.
-
         const result = await model.generateContent(prompt + " \n RESPONSE MUST BE STRICT JSON.");
         const response = await result.response;
         const text = response.text();
 
-        // Clean up potential markdown code blocks ```json ... ```
         const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        // The frontend expects: { response: "stringified json" } because Ollama returns that in 'response' field sometimes? 
-        // Wait, let's check frontend code.
-        // Frontend: const data = await response.json(); const result = JSON.parse(data.response);
-        // So we must return { response: string_of_json }
 
         res.json({ response: cleanText });
 
     } catch (err) {
         console.error("AI Error:", err);
-        res.status(500).json({ error: "Failed to analyze food" });
+        // Expose the error message to the client for debugging
+        res.status(500).json({ error: "Failed to analyze food: " + err.message });
     }
-});
+};
+app.post('/api/analyze-food', analyzeFood);
+app.post('/analyze-food', analyzeFood);
 
 // Health check
 app.get('/', (req, res) => {
