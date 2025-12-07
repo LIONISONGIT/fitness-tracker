@@ -96,7 +96,7 @@ const ChatAssistant = () => {
                         },
                         body: JSON.stringify({
                             id: String(Date.now()),
-                            date: new Date().toLocaleDateString(),
+                            date: new Date().toISOString().split('T')[0],
                             ...foodData
                         })
                     });

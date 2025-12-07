@@ -17,10 +17,9 @@ const FoodLogger = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                // Filter for today's logs if that's the intent, or show all. 
-                // The UI says "Today's Logs", so we filter client-side for now.
-                const today = new Date().toLocaleDateString();
-                setLogs(data.filter(l => l.date === today));
+                // Filter for today's logs using ISO date
+                const today = new Date().toISOString().split('T')[0];
+                setLogs(data.filter(l => l.date === today || new Date(l.date).toISOString().split('T')[0] === today));
             }
         } catch (err) {
             console.error("Failed to fetch logs", err);
@@ -66,7 +65,7 @@ const FoodLogger = () => {
 
             const newLogPayload = {
                 id: String(Date.now()), // ensure string id
-                date: new Date().toLocaleDateString(),
+                date: new Date().toISOString().split('T')[0], // Standardize date
                 ...result
             };
 

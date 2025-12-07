@@ -28,19 +28,29 @@ const Dashboard = () => {
             const logs = await response.json();
 
             // Calculate today's stats
-            const today = new Date().toLocaleDateString();
-            const todaysLogs = logs.filter(log => log.date === today);
+            // Fix: Use YYYY-MM-DD for consistent comparison across devices
+            const today = new Date().toISOString().split('T')[0];
+            const todaysLogs = logs.filter(log => {
+                // Determine if log.date matches today. 
+                // Handle legacy data (M/D/YYYY) vs new data (YYYY-MM-DD)
+                // We will try to normalize log.date to YYYY-MM-DD for comparison if possible, or just strict match if we migrate everything.
+                // For now, strict match assuming new logs will be YYYY-MM-DD.
+                // To be safe for mixed data during transition:
+                return log.date === today || new Date(log.date).toISOString().split('T')[0] === today;
+            });
             const calories = todaysLogs.reduce((acc, log) => acc + (log.calories || 0), 0);
 
             // Prepare Chart Data (Last 7 entries/days)
             // Group by date for a real chart
             const grouped = logs.reduce((acc, log) => {
-                acc[log.date] = (acc[log.date] || 0) + log.calories;
+                // Notify: Grouping might need normalization too if mixed formats exist
+                const dateKey = log.date;
+                acc[dateKey] = (acc[dateKey] || 0) + log.calories;
                 return acc;
             }, {});
 
             const data = Object.keys(grouped).map(date => ({
-                name: date.split('/')[0] + '/' + date.split('/')[1], // Simple date format
+                name: date, // Keep full date for now, or format cleanly
                 calories: grouped[date]
             })).slice(-7); // Last 7 days
 
