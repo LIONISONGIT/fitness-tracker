@@ -2,20 +2,11 @@
 
 @theme {
   --color-primary: #00f0ff;
-  /* Cyan Neon */
   --color-secondary: #7000ff;
-  /* Purple Neon */
   --color-dark: #0a0a0a;
-  /* Deep Black */
   --color-darker: #050505;
-  /* Void Black */
   --color-card: rgba(20, 20, 30, 0.6);
-  /* Glassy Dark */
-
   --font-sans: 'Inter', system-ui, sans-serif;
-
-  --shadow-neon: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
-  --shadow-neon-secondary: 0 0 10px rgba(112, 0, 255, 0.5), 0 0 20px rgba(112, 0, 255, 0.3);
 }
 
 body {
@@ -32,11 +23,17 @@ body {
 }
 
 .card:hover {
-  @apply border-primary/30 shadow-[0_0_15px_rgba(0, 240, 255, 0.1)];
+  @apply border-primary/30;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
 }
 
 .btn-primary {
-  @apply bg-primary text-darker font-bold py-3 px-6 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm hover:scale-105 hover:shadow-[0_0_20px_rgba(0, 240, 255, 0.4)];
+  @apply bg-primary text-darker font-bold py-3 px-6 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
 }
 
 .input-field {
