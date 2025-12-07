@@ -63,7 +63,10 @@ const ChatAssistant = () => {
 
             const response = await fetch('/api/analyze-food', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify({
                     prompt: fullPrompt,
                 }),
@@ -87,7 +90,10 @@ const ChatAssistant = () => {
                     // Save to DB
                     await fetch('/api/logs', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
                         body: JSON.stringify({
                             id: String(Date.now()),
                             date: new Date().toLocaleDateString(),

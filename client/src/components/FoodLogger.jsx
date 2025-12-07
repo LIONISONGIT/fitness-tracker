@@ -12,7 +12,9 @@ const FoodLogger = () => {
 
     const fetchLogs = async () => {
         try {
-            const res = await fetch('/api/logs');
+            const res = await fetch('/api/logs', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 // Filter for today's logs if that's the intent, or show all. 
@@ -42,7 +44,10 @@ const FoodLogger = () => {
 
             const response = await fetch('/api/analyze-food', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify({
                     model: 'mistral',
                     prompt: prompt,
@@ -68,7 +73,10 @@ const FoodLogger = () => {
             // Save to DB
             const saveRes = await fetch('/api/logs', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify(newLogPayload)
             });
 
@@ -90,7 +98,10 @@ const FoodLogger = () => {
 
     const deleteLog = async (id) => {
         try {
-            await fetch(`/api/logs/${id}`, { method: 'DELETE' });
+            await fetch(`/api/logs/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             setLogs(logs.filter(log => log.id !== id));
         } catch (err) {
             console.error("Failed to delete", err);

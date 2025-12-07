@@ -17,6 +17,36 @@ app.use((req, res, next) => {
     next();
 });
 
+// Auth Middleware
+const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (token !== "lion-secret-token") {
+        return res.status(401).json({ error: "Invalid Token" });
+    }
+    next();
+};
+
+// Login Route
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === "lion" && password === "lion36") {
+        return res.json({ token: "lion-secret-token" });
+    }
+    return res.status(401).json({ error: "Invalid credentials" });
+});
+// Handle root login route too for robustness
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === "lion" && password === "lion36") {
+        return res.json({ token: "lion-secret-token" });
+    }
+    return res.status(401).json({ error: "Invalid credentials" });
+});
+
 // Database Connection
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
@@ -64,8 +94,8 @@ const getLogs = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-app.get('/api/logs', getLogs);
-app.get('/logs', getLogs);
+app.get('/api/logs', authMiddleware, getLogs);
+app.get('/logs', authMiddleware, getLogs);
 
 // 2. POST /api/logs
 // 2. POST /api/logs
@@ -102,8 +132,8 @@ const createLog = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-app.post('/api/logs', createLog);
-app.post('/logs', createLog);
+app.post('/api/logs', authMiddleware, createLog);
+app.post('/logs', authMiddleware, createLog);
 
 // 3. DELETE /api/logs/:id
 // 3. DELETE /api/logs/:id
@@ -119,8 +149,8 @@ const deleteLog = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
-app.delete('/api/logs/:id', deleteLog);
-app.delete('/logs/:id', deleteLog);
+app.delete('/api/logs/:id', authMiddleware, deleteLog);
+app.delete('/logs/:id', authMiddleware, deleteLog);
 
 // 4. POST /api/analyze-food (Replaces Ollama)
 // 4. POST /api/analyze-food
@@ -150,8 +180,8 @@ const analyzeFood = async (req, res) => {
         res.status(500).json({ error: "Failed to analyze food: " + err.message });
     }
 };
-app.post('/api/analyze-food', analyzeFood);
-app.post('/analyze-food', analyzeFood);
+app.post('/api/analyze-food', authMiddleware, analyzeFood);
+app.post('/analyze-food', authMiddleware, analyzeFood);
 
 // Health check
 app.get('/', (req, res) => {

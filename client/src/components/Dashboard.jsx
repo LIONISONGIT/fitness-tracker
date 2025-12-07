@@ -21,7 +21,9 @@ const Dashboard = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/logs');
+            const response = await fetch('/api/logs', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const logs = await response.json();
 
