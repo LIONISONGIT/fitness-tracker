@@ -61,13 +61,11 @@ const ChatAssistant = () => {
             const conversation = messages.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n');
             const fullPrompt = `${systemPrompt}\n\nChat History:\n${conversation}\nUser: ${userMessage.content}\nAssistant:`;
 
-            const response = await fetch('/api/ollama/generate', {
+            const response = await fetch('/api/analyze-food', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'llama3:latest',
                     prompt: fullPrompt,
-                    stream: false
                 }),
             });
 
@@ -83,11 +81,12 @@ const ChatAssistant = () => {
                     const foodData = JSON.parse(jsonMatch[1]);
 
                     // Save to JSON Server
-                    await fetch('/api/db/logs', {
+                    // Save to DB
+                    await fetch('/api/logs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            id: Date.now(),
+                            id: String(Date.now()),
                             date: new Date().toLocaleDateString(),
                             ...foodData
                         })
@@ -108,7 +107,7 @@ const ChatAssistant = () => {
 
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Bhai, connection error aa raha hai. Ollama check kar lo!" }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Bhai, connection error aa raha hai. Server check kar lo!" }]);
         } finally {
             setLoading(false);
         }
