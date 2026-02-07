@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #00f0ff;
+  --color-secondary: #7000ff;
+  --color-dark: #0a0a0a;
+  --color-darker: #050505;
+  --color-card: rgba(20, 20, 30, 0.6);
+  --color-text: #e5e7eb;
+  /* gray-200 */
+  --color-text-muted: #9ca3af;
+  /* gray-400 */
+}
+
+[data-theme="light"] {
+  --color-primary: #ffffff;
+  /* White as primary */
+  --color-secondary: #22c55e;
+  /* Standard Tailwind Green 500 - Darker than #90ee90 */
+  --color-dark: #f3f4f6;
+  /* Gray 100 */
+  --color-darker: #e5e7eb;
+  /* Gray 200 */
+  --color-card: #ffffff;
+  /* White card */
+  --color-text: #111827;
+  /* Gray 900 */
+  --color-text-muted: #6b7280;
+  /* Gray 500 */
+}
+
+@theme {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-dark: var(--color-dark);
+  --color-darker: var(--color-darker);
+  --color-card: var(--color-card);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  @apply bg-darker text-text font-sans antialiased transition-colors duration-300;
+  background-image:
+    radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--color-secondary) 10%, transparent) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 20%);
+  background-attachment: fixed;
+}
+
+/* Custom Components */
+.card {
+  @apply bg-card backdrop-blur-xl border border-text/10 rounded-2xl p-6 transition-all duration-300;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .card {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  @apply border-primary/30;
+  box-shadow: 0 0 15px color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.btn-primary {
+  @apply bg-primary text-darker font-bold py-3 px-6 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm border border-transparent;
+}
+
+[data-theme="light"] .btn-primary {
+  @apply border-gray-200 text-gray-800;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+
+.btn-secondary {
+  @apply bg-secondary text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm border border-transparent;
+}
+
+[data-theme="light"] .btn-secondary {
+  @apply text-white;
+  /* Maintain white text if secondary is dark enough, else adjust */
+  /* If secondary is light green (#90ee90), white text might be hard to read. */
+  @apply text-gray-900 border-green-200;
+}
+
+.btn-secondary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-secondary) 40%, transparent);
+}
+
+.input-field {
+  @apply w-full bg-darker/5 border border-text/10 rounded-xl px-4 py-3 text-text placeholder-text-muted focus:outline-none focus:border-primary/50 focus:bg-darker/10 transition-all duration-300;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-glow {
+  animation: glowPulse 2s infinite;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
