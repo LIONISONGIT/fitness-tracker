@@ -66,8 +66,23 @@ const initDb = async () => {
         protein INTEGER,
         carbs INTEGER,
         fats INTEGER,
+        water_ml INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS goals (
+        id VARCHAR(255) PRIMARY KEY,
+        date VARCHAR(50),
+        text TEXT,
+        completed BOOLEAN DEFAULT FALSE,
+        priority VARCHAR(20) DEFAULT 'medium',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      -- Migration for existing tables
+      ALTER TABLE goals ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'medium';
+      ALTER TABLE logs ADD COLUMN IF NOT EXISTS water_ml INTEGER DEFAULT 0;
+
     `);
         client.release();
         console.log('Database initialized successfully');
@@ -80,7 +95,6 @@ initDb();
 
 // Routes
 
-// 1. GET /api/logs
 // 1. GET /api/logs
 const getLogs = async (req, res) => {
     try {
@@ -98,9 +112,8 @@ app.get('/api/logs', authMiddleware, getLogs);
 app.get('/logs', authMiddleware, getLogs);
 
 // 2. POST /api/logs
-// 2. POST /api/logs
 const createLog = async (req, res) => {
-    const { id, date, food, calories, protein, carbs, fats } = req.body;
+    const { id, date, food, calories, protein, carbs, fats, water_ml } = req.body;
 
     // Basic validation
     if (!food || !date) {
@@ -110,8 +123,8 @@ const createLog = async (req, res) => {
     try {
         const client = await pool.connect();
         const query = `
-      INSERT INTO logs (id, date, food, calories, protein, carbs, fats)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO logs (id, date, food, calories, protein, carbs, fats, water_ml)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
         const values = [
@@ -121,7 +134,8 @@ const createLog = async (req, res) => {
             calories || 0,
             protein || 0,
             carbs || 0,
-            fats || 0
+            fats || 0,
+            water_ml || 0
         ];
 
         const result = await client.query(query, values);
@@ -135,7 +149,6 @@ const createLog = async (req, res) => {
 app.post('/api/logs', authMiddleware, createLog);
 app.post('/logs', authMiddleware, createLog);
 
-// 3. DELETE /api/logs/:id
 // 3. DELETE /api/logs/:id
 const deleteLog = async (req, res) => {
     const { id } = req.params;
@@ -152,7 +165,6 @@ const deleteLog = async (req, res) => {
 app.delete('/api/logs/:id', authMiddleware, deleteLog);
 app.delete('/logs/:id', authMiddleware, deleteLog);
 
-// 4. POST /api/analyze-food (Replaces Ollama)
 // 4. POST /api/analyze-food
 const analyzeFood = async (req, res) => {
     const { prompt } = req.body;
@@ -162,22 +174,41 @@ const analyzeFood = async (req, res) => {
         return res.status(500).json({ error: "Server API Key not configured" });
     }
 
-    try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        const result = await model.generateContent(prompt + " \n RESPONSE MUST BE STRICT JSON.");
-        const response = await result.response;
-        const text = response.text();
+    let attempts = 0;
+    const maxAttempts = 5; // Increased to 5 to handle Free Tier (approx 60s coverage)
+    let delay = 2000; // Start with 2 seconds
 
-        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    while (attempts < maxAttempts) {
+        try {
+            const result = await model.generateContent(prompt + " \n RESPONSE MUST BE STRICT JSON.");
+            const response = await result.response;
+            const text = response.text();
 
-        res.json({ response: cleanText });
+            const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            return res.json({ response: cleanText });
 
-    } catch (err) {
-        console.error("AI Error:", err);
-        // Expose the error message to the client for debugging
-        res.status(500).json({ error: "Failed to analyze food: " + err.message });
+        } catch (err) {
+            console.error(`AI Error (Attempt ${attempts + 1}):`, err.message);
+
+            // Check for Rate Limit (429) OR "Overloaded" errors
+            if (err.message.includes("429") || err.message.includes("Too Many Requests") || err.message.includes("quota")) {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    return res.status(429).json({ error: "Server is busy (Rate Limit). Please try again in a minute." });
+                }
+
+                // Smart Delay: If error message has a time, we could parse it, but simple exponential backoff is safer.
+                // 2s -> 4s -> 8s -> 16s -> 32s (Total ~62s)
+                console.log(`Waiting ${delay}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2;
+            } else {
+                return res.status(500).json({ error: "Failed to analyze food: " + err.message });
+            }
+        }
     }
 };
 app.post('/api/analyze-food', authMiddleware, analyzeFood);
@@ -188,8 +219,10 @@ app.get('/', (req, res) => {
     res.send('Fitness Tracker API is running');
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
 
 module.exports = app; // Export for Vercel

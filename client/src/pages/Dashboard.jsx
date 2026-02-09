@@ -4,7 +4,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const Dashboard = () => {
     const [stats, setStats] = useState({
         caloriesConsumed: 0,
-        logsCount: 0
+        logsCount: 0,
+        water_ml: 0
     });
     const [chartData, setChartData] = useState([]);
     const [macroData, setMacroData] = useState([]);
@@ -39,6 +40,7 @@ const Dashboard = () => {
                 return log.date === today || new Date(log.date).toISOString().split('T')[0] === today;
             });
             const calories = todaysLogs.reduce((acc, log) => acc + (log.calories || 0), 0);
+            const water = todaysLogs.reduce((acc, log) => acc + (log.water_ml || 0), 0);
 
             // Prepare Chart Data (Last 7 entries/days)
             // Group by date for a real chart
@@ -70,7 +72,8 @@ const Dashboard = () => {
 
             setStats({
                 caloriesConsumed: calories,
-                logsCount: logs.length
+                logsCount: logs.length,
+                water_ml: water
             });
             setChartData(data);
             setMacroData(pieData);
@@ -117,9 +120,28 @@ const Dashboard = () => {
                     <p className="text-xs text-text-muted mt-2">Consistent tracking is key.</p>
                 </div>
 
-                <div className="card border-l-4 border-l-text/10 bg-gradient-to-br from-card to-darker flex flex-col justify-center items-center text-center">
-                    <h3 className="text-secondary text-xs font-bold uppercase tracking-widest mb-1">Status</h3>
-                    <span className="text-green-500 font-bold tracking-wider text-sm">● ACTIVE</span>
+                <div className="card border-l-4 border-l-blue-500 bg-gradient-to-br from-card to-darker flex flex-col justify-center items-center text-center relative overflow-hidden group">
+                    <h3 className="text-secondary text-xs font-bold uppercase tracking-widest mb-2 z-10">Hydration</h3>
+
+                    {/* Water Bottle Graphic */}
+                    <div className="relative w-12 h-24 border-2 border-blue-400/50 rounded-lg mx-auto bg-darker/30 z-10 backdrop-blur-sm overflow-hidden">
+                        {/* Fill Level */}
+                        <div
+                            className="absolute bottom-0 left-0 w-full bg-blue-500/80 transition-all duration-1000 ease-in-out"
+                            style={{ height: `${Math.min(((stats.water_ml || 0) / 4000) * 100, 100)}%` }}
+                        >
+                            {/* Wave active animation handled by CSS or simple overlay */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-blue-300/50"></div>
+                        </div>
+                    </div>
+
+                    <div className="mt-2 z-10">
+                        <span className="text-2xl font-bold text-blue-400">{stats.water_ml || 0}</span>
+                        <span className="text-xs text-text-muted ml-1">/ 4000 ml</span>
+                    </div>
+
+                    {/* Background Glow */}
+                    <div className="absolute inset-0 bg-blue-500/5 blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
                 </div>
             </div>
 
